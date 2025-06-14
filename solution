@@ -1,0 +1,37 @@
+Optimizing Costs for Billing Records Storage in Azure
+
+Given the requirements of simplicity, no data loss, no downtime, and unchanged API contracts, we propose a solution that leverages Azure Blob Storage for cost-effective storage of billing records while utilizing Azure Cosmos DB for active data. This approach ensures that the existing APIs remain functional without modifications, and the transition is seamless.
+
+Current Setup Assumptions:
+
+- Billing records are currently stored in a relational database (e.g., Azure SQL Database) or another NoSQL database.
+- There are existing APIs for reading and writing billing records.
+
+Proposed Solution:
+
+1. Dual-Storage Approach:
+    - Active Data in Azure Cosmos DB: Store the most recent billing records (e.g., last 6-12 months) in Azure Cosmos DB for fast access and querying. Azure Cosmos DB provides globally distributed, low-latency reads and writes, making it suitable for active data.
+    - Archival Data in Azure Blob Storage: Move older billing records to Azure Blob Storage for cost-effective storage. Azure Blob Storage is ideal for archival purposes due to its durability, scalability, and cost-effectiveness.
+2. Data Migration:
+    - Develop an Azure Function or a batch process to periodically migrate older billing records from Azure Cosmos DB to Azure Blob Storage. This ensures that Azure Cosmos DB contains only the most recent data, optimizing costs without impacting performance.
+    - Ensure the migration process is idempotent and can handle retries without duplicating data in Azure Blob Storage.
+3. API Layer:
+    - API Modifications for Data Retrieval: Update the API logic to check the age of the billing records being requested. For recent records (within the Azure Cosmos DB retention period), fetch data directly from Azure Cosmos DB. For older records, retrieve data from Azure Blob Storage.
+4. Data Retrieval from Azure Blob Storage:
+    - When older records are requested, the API fetches the relevant data from Azure Blob Storage. This might involve querying Azure Blob Storage for specific files or ranges of data based on the request parameters.
+    - Implement caching mechanisms if necessary to improve performance for frequently accessed archival data.
+5. Testing and Validation:
+    - Thoroughly test the new setup to ensure that data migration is accurate and consistent, and APIs function as expected without any data loss or downtime.
+    - Validate that the API responses remain unchanged in terms of format and content.
+
+Benefits:
+
+- Cost Optimization: By storing older, less frequently accessed data in Azure Blob Storage, you can significantly reduce storage costs compared to keeping all data in Azure Cosmos DB.
+- Performance: Azure Cosmos DB's performance for active data remains optimal since it only contains recent records.
+- Seamless Transition: The solution ensures no data loss and no downtime, and the API contracts remain unchanged, providing a seamless experience for users.
+
+Implementation Considerations:
+
+- Data Consistency: Ensure that the data migration process maintains data consistency and integrity between Azure Cosmos DB and Azure Blob Storage.
+- Security and Compliance: Verify that the storage and retrieval of billing records comply with relevant security and privacy regulations.
+- Monitoring and Logging: Implement monitoring and logging to track the performance of the data migration process and API operations, enabling quick identification and resolution of any issues.
