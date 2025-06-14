@@ -20,6 +20,7 @@ database = cosmos_client.get_database_client(cosmos_db_name)
 container = database.get_container_client(container_name)
 
 # Initialize Azure Blob Storage client
+
 blob_service_client = BlobServiceClient.from_connection_string(blob_storage_connection_string)
 blob_container_client = blob_service_client.get_container_client(blob_container_name)
 
@@ -65,3 +66,31 @@ if record:
     print(record)
 else:
     print("Record not found")
+diagrarm
+============
++---------------+
+                                      |  Azure       |
+                                      |  Cosmos DB    |
+                                      |  (Hot Storage) |
+                                      +---------------+
+                                             |
+                                             |
+                                             v
+                                      +---------------+
+                                      |  Azure Function|
+                                      |  (Data Mover)  |
+                                      +---------------+
+                                             |
+                                             |
+                                             v
+                                      +---------------+
+                                      |  Azure Blob   |
+                                      |  Storage (Cold)|
+                                      +---------------+
+                                             |
+                                             |
+                                             v
+                                      +---------------+
+                                      |  Azure Function|
+                                      |  (Data Retriever)|
+                                      +---------------+
