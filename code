@@ -1,0 +1,43 @@
+import azure.cosmos.cosmos_client as cosmos_client
+from azure.storage.blob import BlobServiceClient
+
+# Azure Cosmos DB configuration
+cosmos_db_endpoint = "your_cosmos_db_endpoint"
+cosmos_db_key = "your_cosmos_db_key"
+cosmos_db_name = "your_cosmos_db_name"
+container_name = "your_container_name"
+
+# Azure Blob Storage configuration
+blob_storage_connection_string = "your_blob_storage_connection_string"
+blob_container_name = "billing-records-archive"
+
+# Initialize Azure Cosmos DB client
+cosmos_client = cosmos_client.CosmosClient(cosmos_db_endpoint, cosmos_db_key)
+database = cosmos_client.get_database_client(cosmos_db_name)
+container = database.get_container_client(container_name)
+
+# Initialize Azure Blob Storage client
+blob_service_client = BlobServiceClient.from_connection_string(blob_storage_connection_string)
+blob_container_client = blob_service_client.get_container_client(blob_container_name)
+
+# Define the cutoff date (3 months ago)
+cutoff_date = datetime.now() - timedelta(days=90)
+
+# Query old records
+query = "SELECT * FROM c WHERE c.timestamp < @cutoff_date"
+params = [{"name": "@cutoff_date", "value": cutoff_date}]
+old_records = container.query_items(query, parameters=params, enable_cross_partition_query=True)
+
+# Move old records to Azure Blob Storage
+for record in old_records:
+    record_id = record["id"]
+    record_data = json.dumps(record).encode("utf-8")
+    blob_name = f"{record_id}.json"
+    blob_client = blob_container_client.get_blob_client(blob_name)
+    blob_client.upload_blob(record_data, overwrite=True)
+    
+    # Delete the record from Azure Cosmos DB
+    container.delete_item(record_id, partition_key=record_id)
+
+# Log the number of records moved
+print(f"Moved {len(old_records)} records to Azure Blob Storage")
