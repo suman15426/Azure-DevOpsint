@@ -1,3 +1,6 @@
+move old records to cold storage
+==================================
+
 import azure.cosmos.cosmos_client as cosmos_client
 from azure.storage.blob import BlobServiceClient
 
@@ -41,3 +44,24 @@ for record in old_records:
 
 # Log the number of records moved
 print(f"Moved {len(old_records)} records to Azure Blob Storage")
+
+retrive old records from cloud storage
+======================================
+def retrieve_old_record(record_id):
+    blob_name = f"{record_id}.json"
+    blob_client = blob_container_client.get_blob_client(blob_name)
+    
+    try:
+        blob_data = blob_client.download_blob().content_as_text()
+        record = json.loads(blob_data)
+        return record
+    except ResourceNotFoundError:
+        return None
+
+# Example usage
+old_record_id = "example_record_id"
+record = retrieve_old_record(old_record_id)
+if record:
+    print(record)
+else:
+    print("Record not found")
